@@ -370,3 +370,14 @@ input[type='radio'], input[type='checkbox'] { width: auto; accent-color: var(--i
   .no-print { display: none !important; }
   .certificate { break-inside: avoid; }
 }
+
+/* Legal pages and the consent line */
+.legal h1 { margin-bottom: 0.1em; }
+.legal h2 { font-size: clamp(1.6rem, 3vw, 2rem); margin: 2.2em 0 0.5em; }
+.legal h3 { font-family: var(--sans); font-size: 0.72rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin: 1.6em 0 0.4em; }
+.legal p, .legal li { color: var(--ink); line-height: 1.75; max-width: 40em; }
+.legal ul { padding-left: 1.2em; display: flex; flex-direction: column; gap: 0.5em; margin: 0.6em 0; }
+.legal a { text-underline-offset: 3px; }
+.consent { align-items: flex-start; font-size: 0.86rem; color: var(--muted); }
+.consent input { margin-top: 4px; flex: none; }
+.consent a { color: var(--ink); }

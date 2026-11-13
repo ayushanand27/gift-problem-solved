@@ -10,6 +10,7 @@ import ParallaxImage from './components/ParallaxImage';
 import ProgressBar from './components/ProgressBar';
 import Quotes from './components/Quotes';
 import Reveal from './components/Reveal';
+import Consent from './components/Consent';
 
 const STEPS = [
   {
@@ -156,6 +157,7 @@ export default async function Home() {
                 <span>Choose a password</span>
                 <input type="password" name="password" required minLength={8} maxLength={200} autoComplete="new-password" />
               </label>
+              <Consent />
               <button className="btn primary">Begin your page <ArrowRight size={14} strokeWidth={1.25} /></button>
               <p className="hint">Already with us? <Link href="/login">Log in</Link></p>
             </form>

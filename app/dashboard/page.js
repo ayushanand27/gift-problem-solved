@@ -5,7 +5,7 @@ import { goalsWithTotals, siteUrl, weddingByCouple } from '@/lib/data';
 import { query } from '@/lib/db';
 import { qrDataUrl } from '@/lib/upi';
 import { inr, niceDate } from '@/lib/validate';
-import { setGiftStatus } from '../actions';
+import { resendVerification, setGiftStatus } from '../actions';
 import Notice from '../components/Notice';
 import ProgressBar from '../components/ProgressBar';
 import WeddingForm from '../components/WeddingForm';
@@ -18,6 +18,21 @@ export default async function Dashboard({ searchParams }) {
   const couple = await currentCouple();
   if (!couple) redirect('/login');
   const { e } = await searchParams;
+
+  if (!couple.email_verified_at) {
+    return (
+      <div className="narrow">
+        <p className="eyebrow">One quick step</p>
+        <h1>Check your <em>email</em></h1>
+        <p className="lead">We sent a confirmation link to <strong>{couple.email}</strong>. Open it, then come back here to set up your page.</p>
+        <Notice code={e} />
+        <form action={resendVerification} className="stack">
+          <button className="btn">Send the link again</button>
+        </form>
+        <p className="hint">Nothing in your inbox? Look in spam. Wrong address? Sign up again with the right one.</p>
+      </div>
+    );
+  }
 
   const wedding = await weddingByCouple(couple.id);
   if (!wedding) {

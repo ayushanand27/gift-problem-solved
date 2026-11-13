@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { signup } from '../actions';
 import { isLoggedIn } from '@/lib/auth';
+import Consent from '../components/Consent';
 import Notice from '../components/Notice';
 
 export const metadata = { title: 'Create a gift page' };
@@ -23,6 +24,7 @@ export default async function Signup({ searchParams }) {
           <span>Password (8 characters or more)</span>
           <input type="password" name="password" required minLength={8} maxLength={200} autoComplete="new-password" />
         </label>
+        <Consent />
         <button className="btn primary">Continue</button>
       </form>
       <p className="hint">Already have an account? <Link href="/login">Log in</Link></p>

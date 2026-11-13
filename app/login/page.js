@@ -7,8 +7,8 @@ import Notice from '../components/Notice';
 export const metadata = { title: 'Log in' };
 
 export default async function Login({ searchParams }) {
-  if (await isLoggedIn()) redirect('/dashboard');
   const { e } = await searchParams;
+  if (await isLoggedIn()) redirect(e === 'verified' ? '/dashboard?e=verified' : '/dashboard');
   return (
     <div className="narrow">
       <p className="eyebrow">Welcome back</p>
@@ -25,6 +25,7 @@ export default async function Login({ searchParams }) {
         </label>
         <button className="btn primary">Log in</button>
       </form>
+      <p className="hint"><Link href="/forgot">Forgot your password?</Link></p>
       <p className="hint">New here? <Link href="/signup">Create a gift page</Link></p>
     </div>
   );

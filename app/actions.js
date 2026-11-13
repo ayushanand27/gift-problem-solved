@@ -1,37 +1,131 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
 import { randomBytes, randomInt } from 'node:crypto';
 import { query, transaction } from '@/lib/db';
 import {
   currentCouple, endSession, hashPassword, hasUnlocked, safeEqual,
   startSession, unlockWedding, verifyPassword,
 } from '@/lib/auth';
+import { consumeToken, createToken } from '@/lib/tokens';
+import { sendMail } from '@/lib/mail';
 import { clientIp, recordAttempt, tooMany } from '@/lib/ratelimit';
-import { weddingByCouple, weddingBySlug } from '@/lib/data';
+import { siteUrl, weddingByCouple, weddingBySlug } from '@/lib/data';
 import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, parseRupees } from '@/lib/validate';
 
 // ---------- Couple account ----------
+
+async function sendVerification(couple) {
+  const token = await createToken(couple.id, 'verify', 60 * 24);
+  const link = `${await siteUrl()}/verify?t=${token}`;
+  return sendMail({
+    to: couple.email,
+    subject: 'Confirm your email address',
+    text: `Welcome. Please confirm that this email address is yours:\n\n${link}\n\nThe link works for 24 hours. If you did not sign up, ignore this email and nothing happens.`,
+  });
+}
 
 export async function signup(formData) {
   const email = cleanText(formData.get('email'), 200).toLowerCase();
   const password = String(formData.get('password') ?? '');
   if (!EMAIL.test(email)) redirect('/signup?e=email');
   if (password.length < 8 || password.length > 200) redirect('/signup?e=password');
+  if (formData.get('agree') !== 'on') redirect('/signup?e=agree');
 
   const ip = await clientIp();
   if (await tooMany(`signup:${ip}`, 10, 60)) redirect('/signup?e=slow');
   await recordAttempt(`signup:${ip}`);
 
+  // An address nobody has confirmed can be claimed again by its real owner. That stops anyone
+  // from blocking an email they do not own. A confirmed address is never touched.
+  const passwordHash = hashPassword(password);
   const { rows } = await query(
     `insert into couples (email, password_hash) values ($1, $2)
-     on conflict (email) do nothing returning id`,
-    [email, hashPassword(password)]
+     on conflict (email) do update set password_hash = excluded.password_hash
+       where couples.email_verified_at is null
+     returning id, email, password_hash`,
+    [email, passwordHash]
   );
   if (!rows[0]) redirect('/signup?e=taken');
 
-  await startSession(rows[0].id);
+  await startSession(rows[0].id, rows[0].password_hash);
+  await sendVerification(rows[0]);
   redirect('/dashboard');
+}
+
+export async function resendVerification() {
+  const couple = await currentCouple();
+  if (!couple) redirect('/login');
+  if (couple.email_verified_at) redirect('/dashboard');
+
+  const ip = await clientIp();
+  const keys = [`resend:${couple.id}`, `resend-ip:${ip}`];
+  if ((await tooMany(keys[0], 3, 60)) || (await tooMany(keys[1], 10, 60))) redirect('/dashboard?e=slow');
+  for (const key of keys) await recordAttempt(key);
+
+  const sent = await sendVerification(couple);
+  redirect(sent ? '/dashboard?e=sent' : '/dashboard?e=mailfail');
+}
+
+export async function verifyEmail(formData) {
+  const token = String(formData.get('t') ?? '');
+  const ip = await clientIp();
+  if (await tooMany(`verify-ip:${ip}`, 30, 15)) redirect('/verify?e=slow');
+  await recordAttempt(`verify-ip:${ip}`);
+
+  const coupleId = await consumeToken(token, 'verify');
+  if (!coupleId) redirect('/verify?e=badlink');
+  await query('update couples set email_verified_at = coalesce(email_verified_at, now()) where id = $1', [coupleId]);
+  redirect('/login?e=verified');
+}
+
+export async function requestReset(formData) {
+  const email = cleanText(formData.get('email'), 200).toLowerCase();
+  if (!EMAIL.test(email)) redirect('/forgot?e=email');
+
+  const ip = await clientIp();
+  const keys = [`forgot:${email}`, `forgot-ip:${ip}`];
+  if ((await tooMany(keys[0], 3, 60)) || (await tooMany(keys[1], 10, 60))) redirect('/forgot?e=slow');
+  for (const key of keys) await recordAttempt(key);
+
+  const { rows } = await query('select id, email from couples where email = $1', [email]);
+  if (rows[0]) {
+    const couple = rows[0];
+    const base = await siteUrl();
+    // Sent after the reply, so the page looks and feels the same whether the account exists or not.
+    after(async () => {
+      const token = await createToken(couple.id, 'reset', 30);
+      await sendMail({
+        to: couple.email,
+        subject: 'Reset your password',
+        text: `Someone asked to reset the password for this account. If it was you, open this link:\n\n${base}/reset?t=${token}\n\nThe link works once, for 30 minutes. If it was not you, ignore this email. Your password stays as it is.`,
+      });
+    });
+  }
+  redirect('/forgot?e=resetsent');
+}
+
+export async function resetPassword(formData) {
+  const token = String(formData.get('t') ?? '');
+  const password = String(formData.get('password') ?? '');
+  if (password.length < 8 || password.length > 200) redirect(`/reset?t=${encodeURIComponent(token)}&e=password`);
+
+  const ip = await clientIp();
+  if (await tooMany(`reset-ip:${ip}`, 20, 15)) redirect('/forgot?e=slow');
+  await recordAttempt(`reset-ip:${ip}`);
+
+  // The password is checked first, so a typo does not burn the link.
+  const coupleId = await consumeToken(token, 'reset');
+  if (!coupleId) redirect('/reset?e=badlink');
+
+  // Opening the link also proves the email is theirs. Changing the hash logs out every old session.
+  await query(
+    `update couples set password_hash = $1, email_verified_at = coalesce(email_verified_at, now()) where id = $2`,
+    [hashPassword(password), coupleId]
+  );
+  await query(`delete from email_tokens where couple_id = $1`, [coupleId]);
+  redirect('/login?e=resetdone');
 }
 
 export async function login(formData) {
@@ -49,7 +143,7 @@ export async function login(formData) {
     redirect('/login?e=login');
   }
 
-  await startSession(rows[0].id);
+  await startSession(rows[0].id, rows[0].password_hash);
   redirect('/dashboard');
 }
 
@@ -63,6 +157,7 @@ export async function logout() {
 export async function saveWedding(formData) {
   const couple = await currentCouple();
   if (!couple) redirect('/login');
+  if (!couple.email_verified_at) redirect('/dashboard?e=verifyfirst');
 
   const existing = await weddingByCouple(couple.id);
   const back = existing ? '/dashboard/settings' : '/dashboard';

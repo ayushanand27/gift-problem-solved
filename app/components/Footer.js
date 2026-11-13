@@ -23,6 +23,11 @@ export default function Footer() {
           <Link href="/login">Log in</Link>
           <Link href="/dashboard">Dashboard</Link>
         </nav>
+        <nav aria-label="Legal">
+          <p className="eyebrow">Fine print</p>
+          <Link href="/privacy">Privacy Policy</Link>
+          <Link href="/terms">Terms</Link>
+        </nav>
       </div>
       <p className="footer-wordmark" aria-hidden="true">{SITE_NAME}</p>
       <div className="footer-base">
