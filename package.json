@@ -1,11 +1,12 @@
 {
-  "name": "gift-problem-solved",
+  "name": "shagungoals",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",
@@ -19,5 +20,6 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
-  }
+  },
+  "license": "MIT"
 }

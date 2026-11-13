@@ -64,3 +64,11 @@ Open http://localhost:3000. Tables are created automatically on first use.
 - One UTR can be used for only one gift.
 - Every input is checked on the server, and all database queries use parameters.
 - Security headers are set, including a Content Security Policy.
+
+## Tests
+
+`npm test` runs unit tests for the validation, UPI link and password-format rules. `.github/workflows/ci.yml` runs them and a production build on every push.
+
+## What a certificate means
+
+A certificate only shows that a guest submitted a payment reference. It is marked **Not verified yet** until the couple finds the money in their own bank account and presses **Received**. Public progress bars count confirmed gifts only. Every confirm or reject is written to a history table.

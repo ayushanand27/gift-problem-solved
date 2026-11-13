@@ -381,3 +381,7 @@ input[type='radio'], input[type='checkbox'] { width: auto; accent-color: var(--i
 .consent { align-items: flex-start; font-size: 0.86rem; color: var(--muted); }
 .consent input { margin-top: 4px; flex: none; }
 .consent a { color: var(--ink); }
+
+.filters { flex-wrap: wrap; margin: 16px 0; }
+.danger { margin-top: 48px; }
+.danger h2 { margin-top: 0; }

@@ -59,7 +59,7 @@ export default function Privacy() {
       <h2>How long we keep it</h2>
       <p>
         We keep your account and your gifts for as long as your account exists, so you can look at them after the wedding.
-        Ask us to delete everything and we will. Login attempts are removed within a day. One-time email links stop working once used or expired, and only a scrambled version of them is stored.
+        You can delete your account yourself from the Edit page. That removes your page, goals and gift records. Guests can ask us to remove their entry. Login attempts are removed within a day. One-time email links stop working once used or expired, and only a scrambled version of them is stored.
       </p>
 
       <h2>Your choices</h2>

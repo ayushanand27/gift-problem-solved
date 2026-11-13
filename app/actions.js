@@ -12,7 +12,7 @@ import { consumeToken, createToken } from '@/lib/tokens';
 import { sendMail } from '@/lib/mail';
 import { clientIp, recordAttempt, tooMany } from '@/lib/ratelimit';
 import { siteUrl, weddingByCouple, weddingBySlug } from '@/lib/data';
-import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, parseRupees } from '@/lib/validate';
+import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, inr, isRealDate, parseRupees } from '@/lib/validate';
 
 // ---------- Couple account ----------
 
@@ -166,7 +166,7 @@ export async function saveWedding(formData) {
   const partnerOne = cleanText(formData.get('partner_one'), 60);
   const partnerTwo = cleanText(formData.get('partner_two'), 60);
   const rawDate = String(formData.get('wedding_date') ?? '');
-  const weddingDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) ? rawDate : null;
+  const weddingDate = isRealDate(rawDate) ? rawDate : null;
   const upiId = cleanText(formData.get('upi_id'), 320).toLowerCase();
   const payeeName = cleanText(formData.get('payee_name'), 80);
   const minAmount = parseRupees(formData.get('min_amount'));
@@ -251,13 +251,34 @@ export async function setGiftStatus(formData) {
   const giftId = String(formData.get('gift_id') ?? '');
   const status = String(formData.get('status') ?? '');
   if (UUID.test(giftId) && ['pending', 'confirmed', 'rejected'].includes(status)) {
-    await query(
-      `update gifts set status = $1
-        where id = $2 and wedding_id = (select id from weddings where couple_id = $3)`,
-      [status, giftId, couple.id]
-    );
+    // Every change is written to a history table, so a mistaken click can always be traced.
+    await transaction(async (db) => {
+      const { rows } = await db.query(
+        `select f.status from gifts f join weddings w on w.id = f.wedding_id
+          where f.id = $1 and w.couple_id = $2 for update of f`,
+        [giftId, couple.id]
+      );
+      if (!rows[0] || rows[0].status === status) return;
+      await db.query('update gifts set status = $1 where id = $2', [status, giftId]);
+      await db.query(
+        'insert into gift_status_events (gift_id, couple_id, old_status, new_status) values ($1, $2, $3, $4)',
+        [giftId, couple.id, rows[0].status, status]
+      );
+    });
   }
   redirect('/dashboard#gifts');
+}
+
+export async function deleteAccount(formData) {
+  const couple = await currentCouple();
+  if (!couple) redirect('/login');
+  const current = String(formData.get('current_password') ?? '');
+  if (!current || !verifyPassword(current, couple.password_hash)) redirect('/dashboard/settings?e=current');
+  if (String(formData.get('confirm') ?? '').trim().toLowerCase() !== 'delete') redirect('/dashboard/settings?e=confirmdelete');
+  // Weddings, goals, gifts and history are removed with the account.
+  await query('delete from couples where id = $1', [couple.id]);
+  await endSession();
+  redirect('/');
 }
 
 // ---------- Guest side ----------
@@ -327,6 +348,23 @@ export async function submitGift(formData) {
     [wedding.id, goalId, guestName, message, amount, utr, showAmount]
   );
   if (!rows[0]) redirect(payPage('used'));
+
+  // Tell the couple, so they do not have to keep refreshing the dashboard.
+  const base = await siteUrl();
+  const note = { name: guestName, amount, goalId };
+  after(async () => {
+    const { rows: found } = await query(
+      `select c.email, g.title from weddings w join couples c on c.id = w.couple_id
+         join goals g on g.id = $2 where w.id = $1`,
+      [wedding.id, note.goalId]
+    );
+    if (!found[0]) return;
+    await sendMail({
+      to: found[0].email,
+      subject: `${note.name} sent a gift of ${inr(note.amount)}`,
+      text: `${note.name} says they paid ${inr(note.amount)} towards "${found[0].title}".\n\nCheck your bank or UPI app for the same amount, then confirm it here:\n${base}/dashboard#gifts\n\nUntil you confirm, it is not counted as received.`,
+    });
+  });
 
   redirect(`/gift/${rows[0].id}`);
 }

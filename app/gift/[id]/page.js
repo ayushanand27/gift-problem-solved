@@ -47,7 +47,7 @@ export default async function Certificate({ params }) {
         <p className={confirmed ? 'notice ok' : 'notice'}>
           {confirmed
             ? 'The couple has confirmed this gift.'
-            : 'Your certificate is ready. The couple will confirm the payment from their bank statement.'}
+            : 'Not verified yet. This certificate only shows that you submitted a payment reference. It becomes confirmed when the couple finds the money in their bank account.'}
         </p>
         <PrintButton />
       </div>
@@ -67,7 +67,7 @@ export default async function Certificate({ params }) {
 
           <div className="cert-foot">
             <div>
-              <p className={`stamp ${gift.status}`}>{confirmed ? 'Confirmed by the couple' : 'Awaiting confirmation'}</p>
+              <p className={`stamp ${gift.status}`}>{confirmed ? 'Confirmed by the couple' : 'Not verified yet'}</p>
               <p className="cert-id">Certificate {gift.id.slice(0, 8).toUpperCase()} · {niceDate(gift.gifted_on)}</p>
             </div>
             <div className="cert-qr">

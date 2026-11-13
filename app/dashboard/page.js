@@ -17,7 +17,7 @@ const STATUS_LABEL = { pending: 'Waiting for you', confirmed: 'Confirmed', rejec
 export default async function Dashboard({ searchParams }) {
   const couple = await currentCouple();
   if (!couple) redirect('/login');
-  const { e } = await searchParams;
+  const { e, s: statusFilter, all } = await searchParams;
 
   if (!couple.email_verified_at) {
     return (
@@ -56,6 +56,10 @@ export default async function Dashboard({ searchParams }) {
       order by f.created_at desc`,
     [wedding.id]
   );
+  const FILTERS = [['', 'All'], ['pending', 'Waiting'], ['confirmed', 'Confirmed'], ['rejected', 'Not received']];
+  const filter = FILTERS.some(([key]) => key && key === statusFilter) ? statusFilter : '';
+  const shown = filter ? gifts.filter((gift) => gift.status === filter) : gifts;
+  const visible = all ? shown : shown.slice(0, 50);
 
   const pageUrl = `${await siteUrl()}/w/${wedding.slug}`;
   const qr = await qrDataUrl(pageUrl, 480);
@@ -102,7 +106,9 @@ export default async function Dashboard({ searchParams }) {
             <div className="card goal" key={goal.id}>
               <h3>{goal.title}</h3>
               <ProgressBar raised={goal.raised} target={goal.target_amount} />
-              <p className="hint">{goal.gift_count} {goal.gift_count === 1 ? 'gift' : 'gifts'}</p>
+              <p className="hint">
+                {goal.gift_count} confirmed{goal.pending_count > 0 && <> · {goal.pending_count} waiting for you</>}
+              </p>
             </div>
           ))}
         </div>
@@ -114,9 +120,17 @@ export default async function Dashboard({ searchParams }) {
           Open your bank or UPI app, find the payment with the same reference number (UTR) and amount, then confirm it here.
           Only you can see names and amounts.
         </p>
+        {gifts.length > 0 && (
+          <div className="row filters">
+            {FILTERS.map(([key, label]) => (
+              <Link key={label} className={`btn small${filter === key ? ' primary' : ''}`} href={key ? `/dashboard?s=${key}#gifts` : '/dashboard#gifts'}>{label}</Link>
+            ))}
+            <a className="btn small" href="/dashboard/export">Download CSV</a>
+          </div>
+        )}
         {gifts.length === 0 && <p className="card empty">No gifts yet. They will show up here as guests pay.</p>}
         <div className="gift-list">
-          {gifts.map((gift) => (
+          {visible.map((gift) => (
             <div className="card gift" key={gift.id}>
               <div className="gift-main">
                 <p className="gift-name">{gift.guest_name} <span className={`pill ${gift.status}`}>{STATUS_LABEL[gift.status]}</span></p>
@@ -133,6 +147,9 @@ export default async function Dashboard({ searchParams }) {
             </div>
           ))}
         </div>
+        {visible.length < shown.length && (
+          <p><Link className="btn small" href={`/dashboard?${filter ? `s=${filter}&` : ''}all=1#gifts`}>Show all {shown.length}</Link></p>
+        )}
       </section>
     </div>
   );
