@@ -7,6 +7,7 @@ import { qrDataUrl, upiLink } from '@/lib/upi';
 import { SLUG, UUID, cleanText, inr, parseRupees } from '@/lib/validate';
 import { submitGift } from '@/app/actions';
 import Notice from '@/app/components/Notice';
+import CopyButton from '@/app/components/CopyButton';
 
 export const metadata = { title: 'Pay your gift', robots: { index: false, follow: false } };
 
@@ -52,6 +53,16 @@ export default async function PayPage({ params, searchParams }) {
         <p className="hint">
           Your UPI app shows the bank&apos;s own name for this account before you pay. If it does not match the couple, stop and call them.
         </p>
+        <details className="manual">
+          <summary>Your UPI app refused or the QR did not work?</summary>
+          <p>Some UPI apps block ready-made payment links to personal accounts. Pay by hand instead, it works in every UPI app:</p>
+          <ol>
+            <li>Open any UPI app and choose &ldquo;Pay to UPI ID&rdquo;.</li>
+            <li>Paste this ID: <strong>{wedding.upi_id}</strong> <CopyButton text={wedding.upi_id} label="Copy UPI ID" /></li>
+            <li>Check the name it shows matches <strong>{wedding.payee_name}</strong>.</li>
+            <li>Enter <strong>{inr(amount)}</strong>, pay, then come back and type the UTR below.</li>
+          </ol>
+        </details>
       </div>
 
       <div className="card">
