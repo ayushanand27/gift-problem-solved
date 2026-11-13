@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import ProgressBar from '@/app/components/ProgressBar';
 import { inr } from '@/lib/validate';
+import DemoFlow from './DemoFlow';
 
 export const metadata = { title: 'Demo: see how it works' };
 
@@ -15,8 +16,14 @@ export default function Demo() {
     <div className="medium">
       <header className="center">
         <p className="eyebrow">Demo · nothing here is saved</p>
-        <h1>How a wedding <em>looks</em></h1>
-        <p className="lead">This is a made-up couple. It shows what your guests see after they scan the QR and enter the card code.</p>
+        <h1>Try it as a <em>guest</em></h1>
+        <p className="lead">Walk the whole guest journey with a made-up couple. No payment is made and nothing is saved.</p>
+      </header>
+
+      <DemoFlow />
+
+      <header className="center">
+        <p className="eyebrow">What the couple's page looks like</p>
       </header>
 
       <section className="stack">

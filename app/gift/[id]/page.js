@@ -5,12 +5,14 @@ import { qrDataUrl } from '@/lib/upi';
 import { safeEqual } from '@/lib/auth';
 import { UUID, inr, niceDate } from '@/lib/validate';
 import PrintButton from '@/app/components/PrintButton';
+import Notice from '@/app/components/Notice';
+import { fixUtr } from '@/app/actions';
 
 export const metadata = { title: 'Gift certificate', robots: { index: false, follow: false } };
 
 export default async function Certificate({ params, searchParams }) {
   const { id } = await params;
-  const { k } = await searchParams;
+  const { k, e } = await searchParams;
   if (!UUID.test(id)) notFound();
 
   const { rows } = await query(
@@ -74,6 +76,21 @@ export default async function Certificate({ params, searchParams }) {
             : 'Not verified yet. This certificate only shows that you submitted a payment reference. It becomes confirmed when the couple finds the money in their bank account.'}
         </p>
         <PrintButton />
+        <Notice code={e} />
+        {gift.status === 'pending' && (
+          <details className="manual">
+            <summary>Typed the reference number wrong?</summary>
+            <form action={fixUtr} className="stack">
+              <input type="hidden" name="gift_id" value={gift.id} />
+              <input type="hidden" name="k" value={k} />
+              <label className="field">
+                <span>Correct UPI reference number (UTR), 12 digits</span>
+                <input name="utr" required inputMode="numeric" pattern="[0-9]{12}" maxLength={12} autoComplete="off" />
+              </label>
+              <button type="submit" className="btn">Update</button>
+            </form>
+          </details>
+        )}
         <p style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: 10 }}>Tip: print or screenshot it now. Keep this page's link private, it is the key to your certificate.</p>
       </div>
 

@@ -260,6 +260,31 @@ export async function saveWedding(formData) {
   redirect(existing ? '/dashboard?e=saved' : '/dashboard');
 }
 
+// A guest who mistyped the UPI reference number can fix it from their private certificate link,
+// until the couple has confirmed the gift.
+export async function fixUtr(formData) {
+  const giftId = String(formData.get('gift_id') ?? '');
+  const key = String(formData.get('k') ?? '');
+  const utr = String(formData.get('utr') ?? '').replace(/\s/g, '');
+  if (!UUID.test(giftId)) redirect('/');
+  const back = (code) => redirect(`/gift/${giftId}?k=${encodeURIComponent(key)}&e=${code}`);
+
+  if (await limited(`utrfix:${giftId}`, 5, 60)) back('slow');
+  const { rows } = await query('select cert_key, status from gifts where id = $1', [giftId]);
+  const gift = rows[0];
+  if (!gift || !gift.cert_key || !safeEqual(key, gift.cert_key)) redirect('/');
+  if (gift.status !== 'pending') back('utrlocked');
+  if (!UTR.test(utr)) back('utr');
+
+  try {
+    await query(`update gifts set utr = $1 where id = $2 and status = 'pending'`, [utr, giftId]);
+  } catch (error) {
+    if (error?.code === '23505') back('used');
+    throw error;
+  }
+  back('utrfixed');
+}
+
 // If the card code leaks, the couple can replace it. Old cards stop working and open guest sessions end.
 export async function newCardCode(formData) {
   const couple = await currentCouple();
