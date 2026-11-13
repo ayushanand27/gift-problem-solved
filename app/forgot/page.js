@@ -17,7 +17,7 @@ export default async function Forgot({ searchParams }) {
           <span>Email</span>
           <input type="email" name="email" required autoComplete="email" />
         </label>
-        <button className="btn primary">Send the link</button>
+        <button type="submit" className="btn primary">Send the link</button>
       </form>
       <p className="hint"><Link href="/login">Back to log in</Link></p>
     </div>

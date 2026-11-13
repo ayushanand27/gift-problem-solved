@@ -1,3 +1,5 @@
+import os
+E2E = os.environ.get('E2E_DIR') or os.path.join(os.path.expanduser('~'), '.shagun-e2e')  # mail + screenshots live here, not in a shared /tmp
 import re, sys, glob, time
 from playwright.sync_api import sync_playwright
 
@@ -14,7 +16,7 @@ with sync_playwright() as p:
     errs = []
     c.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
 
-    c.goto(B); c.screenshot(path='/tmp/shagun-shots/home.png', full_page=True)
+    c.goto(B); c.screenshot(path=E2E+'/shots/home.png', full_page=True)
     c.goto(B + '/dashboard'); check('dashboard needs login', '/login' in c.url)
 
     c.goto(B + '/signup')
@@ -22,7 +24,7 @@ with sync_playwright() as p:
     c.check('[name=agree]'); c.click('button.primary'); c.wait_for_url('**/dashboard')
     check('signup asks to confirm email', 'Check your' in c.inner_text('main'))
     time.sleep(1.5)
-    body = open(sorted(glob.glob('/tmp/shagun-mail/*.eml'))[-1]).read().replace('=\n','').replace('=3D','=')
+    body = open(sorted(glob.glob(E2E+'/mail/*.eml'))[-1]).read().replace('=\n','').replace('=3D','=')
     c.goto(re.search(r'http://localhost:3100/verify\?t=[\w-]+', body).group(0)); c.click('button.primary'); c.wait_for_url('**/dashboard**')
     check('already-logged-in user sees confirmation notice', 'Email confirmed' in c.inner_text('main'))
     check('signup lands on setup', 'Set up your gift page' in c.inner_text('main'))
@@ -33,7 +35,7 @@ with sync_playwright() as p:
     c.fill('[name=goal_title_0]', 'Honeymoon in Kerala'); c.fill('[name=goal_target_0]', '150000')
     c.fill('[name=goal_title_1]', 'Home loan'); c.fill('[name=goal_target_1]', '500000')
     c.fill('[name=goal_title_2]', "First child's education"); c.fill('[name=goal_target_2]', '300000')
-    c.screenshot(path='/tmp/shagun-shots/setup.png', full_page=True)
+    c.screenshot(path=E2E+'/shots/setup.png', full_page=True)
     c.click('text=Create our gift page'); c.wait_for_selector('.code')
     code = c.inner_text('.code').strip(); url = c.inner_text('.link-text').strip()
     slug = url.rsplit('/', 1)[1]
@@ -49,7 +51,7 @@ with sync_playwright() as p:
     wrong = '000000' if code != '000000' else '111111'
     g.fill('[name=code]', wrong); g.click('button.primary'); g.wait_for_url('**e=code')
     check('wrong code rejected', 'does not match' in g.content())
-    g.screenshot(path='/tmp/shagun-shots/gate.png')
+    g.screenshot(path=E2E+'/shots/gate.png')
     g.fill('[name=code]', code); g.click('button.primary'); g.wait_for_selector('.couple')
     check('right code opens page', 'Riya' in g.content() and 'Home loan' in g.content())
     check('guest page shows no names of givers', 'UTR' not in g.content())
@@ -61,12 +63,12 @@ with sync_playwright() as p:
     g.goto(f'{B}/w/{slug}')
     g.click('.pick >> nth=1'); g.fill('[name=amount]', '5100'); g.fill('[name=guest_name]', 'Sharma family <b>')
     g.fill('[name=message]', 'Wishing you both a lifetime of happiness')
-    g.screenshot(path='/tmp/shagun-shots/guest.png', full_page=True)
+    g.screenshot(path=E2E+'/shots/guest.png', full_page=True)
     g.click('text=Continue to pay'); g.wait_for_selector('.qr')
     link = g.get_attribute('a.btn.primary', 'href'); print('  upi link:', link)
     check('upi link correct', link.startswith('upi://pay?pa=riya.aman%40okhdfcbank&pn=Riya%20Sharma%20and%20Aman%20Verma&am=5100.00&cu=INR'))
     check('payee name shown', 'Riya Sharma and Aman Verma' in g.inner_text('.payee'))
-    g.screenshot(path='/tmp/shagun-shots/pay.png', full_page=True)
+    g.screenshot(path=E2E+'/shots/pay.png', full_page=True)
 
     g.eval_on_selector('[name=utr]', 'e => { e.removeAttribute("pattern"); e.removeAttribute("maxlength") }')
     g.fill('[name=utr]', '123'); g.click('text=I have paid'); g.wait_for_url('**e=utr**')
@@ -83,7 +85,7 @@ with sync_playwright() as p:
     check('html in name is escaped', g.locator('.certificate b').count() == 0)
     check('amount hidden by default', '5,100' not in body)
     check('certificate says not verified', 'NOT VERIFIED' in body.upper())
-    g.screenshot(path='/tmp/shagun-shots/cert-phone.png', full_page=True)
+    g.screenshot(path=E2E+'/shots/cert-phone.png', full_page=True)
 
     # Same UTR again
     g.goto(f'{B}/w/{slug}/pay?goal_id={goal_id}&amount=2100&guest_name=Cheater')
@@ -99,7 +101,7 @@ with sync_playwright() as p:
     time.sleep(1)
     import email as _e
     from email import policy as _p
-    check('couple was emailed about the gift', any('sent a gift' in str(_e.message_from_string(open(f).read(), policy=_p.default)['subject']) for f in sorted(glob.glob('/tmp/shagun-mail/*.eml'))[-6:]))
+    check('couple was emailed about the gift', any('sent a gift' in str(_e.message_from_string(open(f).read(), policy=_p.default)['subject']) for f in sorted(glob.glob(E2E+'/mail/*.eml'))[-6:]))
     # Couple confirms one, rejects the other
     c.goto(B + '/dashboard')
     check('dashboard shows waiting count', '2 waiting' in c.inner_text('main') or '1 waiting' in c.inner_text('main'))
@@ -109,7 +111,7 @@ with sync_playwright() as p:
     c.goto(B + '/dashboard')
     check('confirmed total is 5,100', '₹5,100' in c.inner_text('.stats'))
     check('rejected gift not in progress', '₹5,100 of ₹5,00,000' in c.inner_text('main'))
-    c.screenshot(path='/tmp/shagun-shots/dashboard.png', full_page=True)
+    c.screenshot(path=E2E+'/shots/dashboard.png', full_page=True)
 
     g.goto(f'{B}/w/{slug}'); check('confirmed gift now shows on guest page', '₹5,100' in g.inner_text('main'))
     r = c.request.get(B + '/dashboard/export'); csv = r.text()
@@ -120,8 +122,8 @@ with sync_playwright() as p:
     g.goto(cert2); check('rejected gift has no certificate', g.locator('.certificate').count() == 0 and 'not found' in g.content().lower())
 
     wide = br.new_context(viewport={'width': 1100, 'height': 800}).new_page()
-    wide.goto(cert_url); wide.screenshot(path='/tmp/shagun-shots/cert.png', full_page=True)
-    wide.emulate_media(media='print'); wide.pdf(path='/tmp/shagun-shots/cert.pdf', prefer_css_page_size=True)
+    wide.goto(cert_url); wide.screenshot(path=E2E+'/shots/cert.png', full_page=True)
+    wide.emulate_media(media='print'); wide.pdf(path=E2E+'/shots/cert.pdf', prefer_css_page_size=True)
 
     # Other couple cannot touch this wedding's gifts; UPI change needs password
     c.goto(B + '/dashboard/settings')
@@ -133,7 +135,7 @@ with sync_playwright() as p:
     text = c.inner_text('main')
     check('goal with gifts kept, rename works', 'Home loan' in text and 'Honeymoon in Munnar' in text)
     c.goto(B + '/dashboard/settings'); check('UPI updated with password', c.input_value('[name=upi_id]') == 'riya.aman@oksbi')
-    c.screenshot(path='/tmp/shagun-shots/settings.png', full_page=True)
+    c.screenshot(path=E2E+'/shots/settings.png', full_page=True)
 
     c.click('text=Log out'); c.wait_for_url(B + '/')
     c.goto(B + '/login'); c.fill('[name=email]', 'riya@example.com'); c.fill('[name=password]', 'wrong-pass'); c.click('button.primary'); c.wait_for_url('**e=login')

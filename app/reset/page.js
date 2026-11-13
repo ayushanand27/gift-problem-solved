@@ -29,7 +29,7 @@ export default async function Reset({ searchParams }) {
           <span>New password (8 characters or more)</span>
           <input type="password" name="password" required minLength={8} maxLength={200} autoComplete="new-password" />
         </label>
-        <button className="btn primary">Save new password</button>
+        <button type="submit" className="btn primary">Save new password</button>
       </form>
       <p className="hint">You will be logged out everywhere else.</p>
     </div>

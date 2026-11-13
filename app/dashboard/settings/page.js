@@ -29,7 +29,7 @@ export default async function Settings({ searchParams }) {
         <form action={deleteAccount} className="stack">
           <label className="field"><span>Current password</span><input type="password" name="current_password" required autoComplete="current-password" /></label>
           <label className="field"><span>Type the word delete</span><input name="confirm" required autoComplete="off" /></label>
-          <button className="btn">Delete everything</button>
+          <button type="submit" className="btn">Delete everything</button>
         </form>
       </section>
     </div>

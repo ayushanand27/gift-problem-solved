@@ -19,7 +19,7 @@ export default async function Verify({ searchParams }) {
         <form action={verifyEmail} className="stack">
           <input type="hidden" name="t" value={t} />
           <p className="lead">Press the button to confirm this address.</p>
-          <button className="btn primary">Confirm my email</button>
+          <button type="submit" className="btn primary">Confirm my email</button>
         </form>
       ) : (
         <>

@@ -25,7 +25,7 @@ export default async function GuestPage({ params, searchParams }) {
         <form action={enterCode} className="stack">
           <input type="hidden" name="slug" value={slug} />
           <input className="code-input" name="code" required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="off" aria-label="6-digit code" placeholder="000000" />
-          <button className="btn primary">Open the page</button>
+          <button type="submit" className="btn primary">Open the page</button>
         </form>
       </div>
     );
@@ -71,7 +71,7 @@ export default async function GuestPage({ params, searchParams }) {
             <span>A message for the couple (optional)</span>
             <textarea name="message" maxLength={200} rows={2} />
           </label>
-          <button className="btn primary">Continue to pay</button>
+          <button type="submit" className="btn primary">Continue to pay</button>
         </fieldset>
       </form>
     </div>

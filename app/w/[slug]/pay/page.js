@@ -84,7 +84,7 @@ export default async function PayPage({ params, searchParams }) {
             <span>Print the amount on my certificate</span>
           </label>
           <p className="hint">Your name, message, amount and reference number are shown only to the couple. See the <Link href="/privacy" target="_blank">Privacy Policy</Link>.</p>
-          <button className="btn primary">I have paid. Make my certificate</button>
+          <button type="submit" className="btn primary">I have paid. Make my certificate</button>
         </form>
       </div>
     </div>

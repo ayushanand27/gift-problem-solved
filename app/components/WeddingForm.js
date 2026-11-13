@@ -78,7 +78,7 @@ export default function WeddingForm({ wedding, goals = [] }) {
         ))}
       </fieldset>
 
-      <button className="btn primary">{editing ? 'Save changes' : 'Create our gift page'}</button>
+      <button type="submit" className="btn primary">{editing ? 'Save changes' : 'Create our gift page'}</button>
     </form>
   );
 }

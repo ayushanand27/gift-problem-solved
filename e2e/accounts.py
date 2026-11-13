@@ -1,6 +1,8 @@
+import os
+E2E = os.environ.get('E2E_DIR') or os.path.join(os.path.expanduser('~'), '.shagun-e2e')  # mail + screenshots live here, not in a shared /tmp
 import glob, os, re, time
 from playwright.sync_api import sync_playwright
-B='http://localhost:3100'; M='/tmp/shagun-mail'
+B='http://localhost:3100'; M=E2E+'/mail'
 res=[]
 def check(n,c): res.append(bool(c)); print(('PASS ' if c else 'FAIL ')+n)
 def mails(): return sorted(glob.glob(M+'/*.eml'))
@@ -23,7 +25,7 @@ with sync_playwright() as p:
     a.check('[name=agree]'); a.click('button.primary'); a.wait_for_url('**/dashboard')
     check('unverified sees check-email page', 'Check your' in a.inner_text('main') and 'nia@example.com' in a.inner_text('main'))
     check('setup form hidden until verified', 'partner_one' not in a.content())
-    a.screenshot(path='/tmp/shagun-shots/check-email.png')
+    a.screenshot(path=E2E+'/shots/check-email.png')
     m1=wait_new(start); check('verification mail sent', m1 and 'Confirm your email' in m1)
     old_link=link(m1,'/verify')
 
@@ -67,7 +69,7 @@ with sync_playwright() as p:
     r.goto(rl); r.fill('[name=password]','short'); 
     r.evaluate("document.querySelector('[name=password]').removeAttribute('minlength')"); r.click('button.primary'); r.wait_for_url('**e=password')
     check('short password refused, link still alive', 'at least 8' in r.inner_text('main') and 'name=password' in r.content().replace('"',''))
-    r.screenshot(path='/tmp/shagun-shots/reset.png')
+    r.screenshot(path=E2E+'/shots/reset.png')
     r.fill('[name=password]','brand-new-pass-4'); r.click('button.primary'); r.wait_for_url('**/login**')
     check('reset done notice', 'Password changed' in r.inner_text('main'))
     r.goto(rl); check('reset link is single-use', 'no longer works' in r.inner_text('main'))
@@ -88,9 +90,9 @@ with sync_playwright() as p:
     L=br.new_context(viewport={'width':1200,'height':900}).new_page()
     for path,word in (('/privacy','Privacy'),('/terms','Terms')):
         L.goto(B+path); txt=L.inner_text('main'); check(f'{path} renders', word in txt and 'hello@test.local' in txt and 'Neon' in txt+'Neon')
-    L.goto(B+'/privacy'); L.screenshot(path='/tmp/shagun-shots/privacy.png', full_page=True)
+    L.goto(B+'/privacy'); L.screenshot(path=E2E+'/shots/privacy.png', full_page=True)
     L.goto(B+'/signup'); check('signup links to both', L.locator('a[href="/privacy"]').count()>=1 and L.locator('a[href="/terms"]').count()>=1)
-    L.screenshot(path='/tmp/shagun-shots/signup.png')
+    L.screenshot(path=E2E+'/shots/signup.png')
     L.goto(B+'/'); check('footer links on home', L.locator('footer a[href="/privacy"]').count()==1 and L.locator('footer a[href="/terms"]').count()==1)
     L.goto(B+'/login'); check('login links to reset', L.locator('a[href="/forgot"]').count()==1)
     br.close()

@@ -54,7 +54,7 @@ export default function Navbar({ brand, loggedIn, logoutAction }) {
 
         <nav className="nav-links nav-right" aria-label="Account">
           {right.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-          {loggedIn && <form action={logoutAction}><button className="nav-button">Log out</button></form>}
+          {loggedIn && <form action={logoutAction}><button type="submit" className="nav-button">Log out</button></form>}
         </nav>
         <span className="nav-spacer" aria-hidden="true" />
       </div>
@@ -88,7 +88,7 @@ export default function Navbar({ brand, loggedIn, logoutAction }) {
                   <Link href={item.href} onClick={() => setOpen(false)}>{item.label}</Link>
                 </motion.div>
               ))}
-              {loggedIn && <form action={logoutAction}><button className="drawer-button">Log out</button></form>}
+              {loggedIn && <form action={logoutAction}><button type="submit" className="drawer-button">Log out</button></form>}
             </nav>
             <p className="eyebrow drawer-note">Gifts go bank to bank. We never hold them.</p>
           </motion.div>

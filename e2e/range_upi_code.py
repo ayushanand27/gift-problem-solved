@@ -1,10 +1,12 @@
+import os
+E2E = os.environ.get('E2E_DIR') or os.path.join(os.path.expanduser('~'), '.shagun-e2e')  # mail + screenshots live here, not in a shared /tmp
 import re, time, glob, os
 from playwright.sync_api import sync_playwright
 B='http://localhost:3100'; ok=0; bad=0
 def check(n,c):
     global ok,bad
     print(('PASS ' if c else 'FAIL ')+n); ok+=bool(c); bad+=(not c)
-def mails(): return sorted(glob.glob('/tmp/tests/mail/*.eml'))
+def mails(): return sorted(glob.glob(E2E+'/mail/*.eml'))
 def link_since(n, path, to=15):
     t=time.time()
     while time.time()-t<to:

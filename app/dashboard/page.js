@@ -27,7 +27,7 @@ export default async function Dashboard({ searchParams }) {
         <p className="lead">We sent a confirmation link to <strong>{couple.email}</strong>. Open it, then come back here to set up your page.</p>
         <Notice code={e} />
         <form action={resendVerification} className="stack">
-          <button className="btn">Send the link again</button>
+          <button type="submit" className="btn">Send the link again</button>
         </form>
         <p className="hint">Nothing in your inbox? Look in spam. Wrong address? Sign up again with the right one.</p>
       </div>
@@ -107,7 +107,7 @@ export default async function Dashboard({ searchParams }) {
             <summary>Code leaked or card lost?</summary>
             <form action={newCardCode} className="row">
               <input type="password" name="current_password" required autoComplete="current-password" placeholder="Your password" aria-label="Current password" />
-              <button className="btn">Make a new code</button>
+              <button type="submit" className="btn">Make a new code</button>
             </form>
             <p className="hint">Cards already printed will stop working until you reprint with the new code.</p>
           </details>
@@ -155,8 +155,8 @@ export default async function Dashboard({ searchParams }) {
               </div>
               <form action={setGiftStatus} className="row">
                 <input type="hidden" name="gift_id" value={gift.id} />
-                {gift.status !== 'confirmed' && <button className="btn small primary" name="status" value="confirmed">Received</button>}
-                {gift.status !== 'rejected' && <button className="btn small" name="status" value="rejected">Not received</button>}
+                {gift.status !== 'confirmed' && <button type="submit" className="btn small primary" name="status" value="confirmed">Received</button>}
+                {gift.status !== 'rejected' && <button type="submit" className="btn small" name="status" value="rejected">Not received</button>}
                 <Link className="btn small" href={`/gift/${gift.id}?k=${gift.cert_key}`}>Certificate</Link>
               </form>
             </div>

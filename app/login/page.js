@@ -23,7 +23,7 @@ export default async function Login({ searchParams }) {
           <span>Password</span>
           <input type="password" name="password" required maxLength={200} autoComplete="current-password" />
         </label>
-        <button className="btn primary">Log in</button>
+        <button type="submit" className="btn primary">Log in</button>
       </form>
       <p className="hint"><Link href="/forgot">Forgot your password?</Link></p>
       <p className="hint">New here? <Link href="/signup">Create a gift page</Link></p>

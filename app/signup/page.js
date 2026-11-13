@@ -25,7 +25,7 @@ export default async function Signup({ searchParams }) {
           <input type="password" name="password" required minLength={8} maxLength={200} autoComplete="new-password" />
         </label>
         <Consent />
-        <button className="btn primary">Continue</button>
+        <button type="submit" className="btn primary">Continue</button>
       </form>
       <p className="hint">Already have an account? <Link href="/login">Log in</Link></p>
     </div>
