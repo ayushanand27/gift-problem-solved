@@ -11,7 +11,7 @@ import {
 import { consumeToken, createToken } from '@/lib/tokens';
 import { sendMail } from '@/lib/mail';
 import { clientIp } from '@/lib/ratelimit';
-import { limited, refund } from '@/lib/limiter';
+import { hit, limited, refund } from '@/lib/limiter';
 import { siteUrl, weddingByCouple, weddingBySlug } from '@/lib/data';
 import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, inr, isRealDate, parseRupees } from '@/lib/validate';
 
@@ -129,12 +129,13 @@ export async function login(formData) {
   const ip = await clientIp();
   const keys = [`login:${email}`, `login-ip:${ip}`];
 
-  if ((await limited(keys[0], 8, 15)) || (await limited(keys[1], 30, 15))) redirect('/login?e=slow');
+  const tries = [await hit(keys[0], 8, 15), await hit(keys[1], 30, 15)];
+  if (tries.some((t) => t.blocked)) redirect('/login?e=slow');
 
   const { rows } = await query('select id, password_hash from couples where email = $1', [email]);
   const ok = rows[0] && verifyPassword(password, rows[0].password_hash);
   if (!ok) redirect('/login?e=login');
-  for (const key of keys) await refund(key);
+  for (let i = 0; i < keys.length; i++) await refund(keys[i], tries[i].id);
 
   await startSession(rows[0].id, rows[0].password_hash);
   redirect('/dashboard');
@@ -284,13 +285,14 @@ export async function enterCode(formData) {
   const ip = await clientIp();
   const keys = [`code:${slug}:${ip}`, `code:${slug}`];
   // Each try is counted first, and given back if the code is right. So only wrong guesses use up the allowance.
-  if ((await limited(keys[0], 8, 15)) || (await limited(keys[1], 60, 15))) redirect(`/w/${slug}?e=slow`);
+  const tries = [await hit(keys[0], 8, 15), await hit(keys[1], 60, 15)];
+  if (tries.some((t) => t.blocked)) redirect(`/w/${slug}?e=slow`);
 
   const wedding = await weddingBySlug(slug);
   if (!wedding) redirect('/');
 
   if (!safeEqual(code, wedding.card_code)) redirect(`/w/${slug}?e=code`);
-  for (const key of keys) await refund(key);
+  for (let i = 0; i < keys.length; i++) await refund(keys[i], tries[i].id);
 
   await unlockWedding(slug);
   redirect(`/w/${slug}`);
