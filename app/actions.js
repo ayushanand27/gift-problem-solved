@@ -12,6 +12,7 @@ import { consumeToken, createToken } from '@/lib/tokens';
 import { sendMail } from '@/lib/mail';
 import { clientIp } from '@/lib/ratelimit';
 import { hit, limited, refund } from '@/lib/limiter';
+import { hasKnownHandle } from '@/lib/upi';
 import { siteUrl, weddingByCouple, weddingBySlug } from '@/lib/data';
 import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, inr, isRealDate, parseRupees } from '@/lib/validate';
 
@@ -173,6 +174,12 @@ export async function saveWedding(formData) {
   if (!partnerOne || !partnerTwo) fail('names');
   if (!UPI_ID.test(upiId)) fail('upi');
   if (!payeeName) fail('payee');
+  // A new or changed UPI ID is typed twice and, if the bank part is unusual, must have been tested.
+  if (!existing || existing.upi_id !== upiId) {
+    const again = cleanText(formData.get('upi_id_confirm'), 320).toLowerCase();
+    if (again !== upiId) fail('upiconfirm');
+    if (!hasKnownHandle(upiId) && formData.get('upi_checked') !== 'on') fail('upihandle');
+  }
   if (!minAmount || !maxAmount || minAmount > maxAmount || maxAmount > UPI_LIMIT) fail('range');
 
   const goals = [];
@@ -253,6 +260,19 @@ export async function saveWedding(formData) {
   redirect(existing ? '/dashboard?e=saved' : '/dashboard');
 }
 
+// If the card code leaks, the couple can replace it. Old cards stop working and open guest sessions end.
+export async function newCardCode(formData) {
+  const couple = await currentCouple();
+  if (!couple) redirect('/login');
+  const wedding = await weddingByCouple(couple.id);
+  if (!wedding) redirect('/dashboard');
+  const current = String(formData.get('current_password') ?? '');
+  if (!current || !verifyPassword(current, couple.password_hash)) redirect('/dashboard?e=current');
+  const cardCode = String(randomInt(0, 1000000)).padStart(6, '0');
+  await query('update weddings set card_code = $1 where id = $2 and couple_id = $3', [cardCode, wedding.id, couple.id]);
+  redirect('/dashboard?e=newcode');
+}
+
 export async function setGiftStatus(formData) {
   const couple = await currentCouple();
   if (!couple) redirect('/login');
@@ -309,17 +329,16 @@ export async function enterCode(formData) {
   if (!safeEqual(code, wedding.card_code)) redirect(`/w/${slug}?e=code`);
   for (let i = 0; i < keys.length; i++) await refund(keys[i], tries[i].id);
 
-  await unlockWedding(slug);
+  await unlockWedding(slug, wedding.card_code);
   redirect(`/w/${slug}`);
 }
 
 export async function submitGift(formData) {
   const slug = String(formData.get('slug') ?? '');
   if (!SLUG.test(slug)) redirect('/');
-  if (!(await hasUnlocked(slug))) redirect(`/w/${slug}`);
-
   const wedding = await weddingBySlug(slug);
   if (!wedding) redirect('/');
+  if (!(await hasUnlocked(slug, wedding.card_code))) redirect(`/w/${slug}`);
 
   const goalId = String(formData.get('goal_id') ?? '');
   const amount = parseRupees(formData.get('amount'));

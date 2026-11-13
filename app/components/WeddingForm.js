@@ -1,5 +1,5 @@
 import { saveWedding } from '@/app/actions';
-import RangeField from './RangeField';
+import GiftRange from './GiftRange';
 
 const IDEAS = ['Honeymoon', 'Home loan', "First child's education", 'Our first car', 'New home setup'];
 
@@ -36,6 +36,14 @@ export default function WeddingForm({ wedding, goals = [] }) {
           <input name="upi_id" required maxLength={320} defaultValue={wedding?.upi_id} placeholder="riya.aman@okhdfcbank" autoCapitalize="none" />
         </label>
         <label className="field">
+          <span>Type the UPI ID again{editing ? ' (only if you changed it)' : ''}</span>
+          <input name="upi_id_confirm" required={!editing} maxLength={320} placeholder="riya.aman@okhdfcbank" autoCapitalize="none" autoComplete="off" />
+        </label>
+        <label className="check">
+          <input type="checkbox" name="upi_checked" />
+          <span>I sent ₹1 to this UPI ID from my own phone and it reached us (recommended, and needed if the bank part after @ is unusual).</span>
+        </label>
+        <label className="field">
           <span>Account holder name, as in the bank</span>
           <input name="payee_name" required maxLength={80} defaultValue={wedding?.payee_name} placeholder="Riya Sharma and Aman Verma" />
         </label>
@@ -49,9 +57,7 @@ export default function WeddingForm({ wedding, goals = [] }) {
 
       <fieldset>
         <legend>Gift range</legend>
-        <RangeField name="min_amount" label="Smallest gift" min={1} max={5001} step={100} defaultValue={wedding?.min_amount ?? 501} />
-        <RangeField name="max_amount" label="Largest gift" min={1000} max={100000} step={1000} defaultValue={wedding?.max_amount ?? 51000} />
-        <p className="hint">UPI allows up to ₹1,00,000 in one payment.</p>
+        <GiftRange defaultMin={wedding?.min_amount ?? 501} defaultMax={wedding?.max_amount ?? 51000} />
       </fieldset>
 
       <fieldset>

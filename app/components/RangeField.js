@@ -1,10 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-
-// A slider that shows the chosen rupee amount next to its label.
-export default function RangeField({ name, label, min, max, step, defaultValue }) {
-  const [value, setValue] = useState(defaultValue);
+// A slider that shows the chosen rupee amount next to its label. The parent owns the value.
+export default function RangeField({ name, label, min, max, step, value, onChange }) {
   return (
     <label className="field">
       <span>
@@ -17,7 +14,7 @@ export default function RangeField({ name, label, min, max, step, defaultValue }
         max={max}
         step={step}
         value={value}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) => onChange(Number(event.target.value))}
       />
     </label>
   );

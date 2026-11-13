@@ -14,9 +14,9 @@ export default async function PayPage({ params, searchParams }) {
   const { slug } = await params;
   const sp = await searchParams;
   if (!SLUG.test(slug)) notFound();
-  if (!(await hasUnlocked(slug))) redirect(`/w/${slug}`);
   const wedding = await weddingBySlug(slug);
   if (!wedding) notFound();
+  if (!(await hasUnlocked(slug, wedding.card_code))) redirect(`/w/${slug}`);
 
   const goalId = String(sp.goal_id ?? '');
   const amount = parseRupees(sp.amount);

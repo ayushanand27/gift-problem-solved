@@ -5,7 +5,7 @@ import { goalsWithTotals, siteUrl, weddingByCouple } from '@/lib/data';
 import { query } from '@/lib/db';
 import { qrDataUrl } from '@/lib/upi';
 import { inr, niceDate } from '@/lib/validate';
-import { resendVerification, setGiftStatus } from '../actions';
+import { newCardCode, resendVerification, setGiftStatus } from '../actions';
 import Notice from '../components/Notice';
 import ProgressBar from '../components/ProgressBar';
 import WeddingForm from '../components/WeddingForm';
@@ -103,6 +103,14 @@ export default async function Dashboard({ searchParams }) {
             <a className="btn" href={qr} download="wedding-card-qr.png">Download QR</a>
             <Link className="btn" href={`/w/${wedding.slug}`}>See guest page</Link>
           </div>
+          <details className="code-reset">
+            <summary>Code leaked or card lost?</summary>
+            <form action={newCardCode} className="row">
+              <input type="password" name="current_password" required autoComplete="current-password" placeholder="Your password" aria-label="Current password" />
+              <button className="btn">Make a new code</button>
+            </form>
+            <p className="hint">Cards already printed will stop working until you reprint with the new code.</p>
+          </details>
         </div>
       </section>
 

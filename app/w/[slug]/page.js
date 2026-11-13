@@ -15,7 +15,7 @@ export default async function GuestPage({ params, searchParams }) {
   const wedding = await weddingBySlug(slug);
   if (!wedding) notFound();
 
-  if (!(await hasUnlocked(slug))) {
+  if (!(await hasUnlocked(slug, wedding.card_code))) {
     return (
       <div className="narrow center">
         <p className="eyebrow">You are invited</p>

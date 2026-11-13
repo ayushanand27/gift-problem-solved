@@ -29,7 +29,7 @@ with sync_playwright() as p:
 
     c.fill('[name=partner_one]', 'Riya'); c.fill('[name=partner_two]', 'Aman')
     c.fill('[name=wedding_date]', '2027-02-14')
-    c.fill('[name=upi_id]', 'riya.aman@okhdfcbank'); c.fill('[name=payee_name]', 'Riya Sharma and Aman Verma')
+    c.fill('[name=upi_id]', 'riya.aman@okhdfcbank'); c.fill('[name=upi_id_confirm]', 'riya.aman@okhdfcbank'); c.fill('[name=payee_name]', 'Riya Sharma and Aman Verma')
     c.fill('[name=goal_title_0]', 'Honeymoon in Kerala'); c.fill('[name=goal_target_0]', '150000')
     c.fill('[name=goal_title_1]', 'Home loan'); c.fill('[name=goal_target_1]', '500000')
     c.fill('[name=goal_title_2]', "First child's education"); c.fill('[name=goal_target_2]', '300000')
@@ -125,9 +125,9 @@ with sync_playwright() as p:
 
     # Other couple cannot touch this wedding's gifts; UPI change needs password
     c.goto(B + '/dashboard/settings')
-    c.fill('[name=upi_id]', 'thief@ybl'); c.click('text=Save changes'); c.wait_for_url('**e=current**')
+    c.fill('[name=upi_id]', 'thief@ybl'); c.fill('[name=upi_id_confirm]', 'thief@ybl'); c.click('text=Save changes'); c.wait_for_url('**e=current**')
     check('UPI change without password refused', 'current password' in c.content().lower())
-    c.fill('[name=upi_id]', 'riya.aman@oksbi'); c.fill('[name=current_password]', 'correct-horse-9')
+    c.fill('[name=upi_id]', 'riya.aman@oksbi'); c.fill('[name=upi_id_confirm]', 'riya.aman@oksbi'); c.fill('[name=current_password]', 'correct-horse-9')
     c.fill('[name=goal_title_1]', ''); c.fill('[name=goal_title_0]', 'Honeymoon in Munnar')
     c.click('text=Save changes'); c.wait_for_url('**/dashboard?e=saved')
     text = c.inner_text('main')

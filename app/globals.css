@@ -394,3 +394,7 @@ input[type='radio'], input[type='checkbox'] { width: auto; accent-color: var(--i
   color: rgba(158, 130, 94, 0.22); transform: rotate(-24deg); white-space: nowrap; z-index: 1;
 }
 .cert-inner { position: relative; z-index: 2; }
+
+.code-reset { margin-top: 18px; font-size: 0.9rem; }
+.code-reset summary { cursor: pointer; opacity: 0.75; }
+.code-reset form { margin-top: 10px; gap: 10px; flex-wrap: wrap; }
