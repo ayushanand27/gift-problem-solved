@@ -74,6 +74,7 @@ export default async function Certificate({ params, searchParams }) {
             : 'Not verified yet. This certificate only shows that you submitted a payment reference. It becomes confirmed when the couple finds the money in their bank account.'}
         </p>
         <PrintButton />
+        <p style={{ fontSize: "0.85rem", opacity: 0.7, marginTop: 10 }}>Tip: print or screenshot it now. Keep this page's link private, it is the key to your certificate.</p>
       </div>
 
       <article className={`certificate${confirmed ? '' : ' unverified'}`}>
