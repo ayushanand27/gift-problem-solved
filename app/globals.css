@@ -385,3 +385,12 @@ input[type='radio'], input[type='checkbox'] { width: auto; accent-color: var(--i
 .filters { flex-wrap: wrap; margin: 16px 0; }
 .danger { margin-top: 48px; }
 .danger h2 { margin-top: 0; }
+
+/* Unconfirmed certificates carry a large diagonal mark so nobody can mistake them for proof */
+.certificate { position: relative; overflow: hidden; }
+.watermark {
+  position: absolute; inset: 0; display: grid; place-items: center; margin: 0; pointer-events: none;
+  font-family: var(--serif); font-size: clamp(2rem, 9.5vw, 4.6rem); letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(158, 130, 94, 0.22); transform: rotate(-24deg); white-space: nowrap; z-index: 1;
+}
+.cert-inner { position: relative; z-index: 2; }

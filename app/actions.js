@@ -10,7 +10,8 @@ import {
 } from '@/lib/auth';
 import { consumeToken, createToken } from '@/lib/tokens';
 import { sendMail } from '@/lib/mail';
-import { clientIp, recordAttempt, tooMany } from '@/lib/ratelimit';
+import { clientIp } from '@/lib/ratelimit';
+import { limited, refund } from '@/lib/limiter';
 import { siteUrl, weddingByCouple, weddingBySlug } from '@/lib/data';
 import { EMAIL, SLUG, UPI_ID, UPI_LIMIT, UTR, UUID, cleanText, inr, isRealDate, parseRupees } from '@/lib/validate';
 
@@ -34,8 +35,7 @@ export async function signup(formData) {
   if (formData.get('agree') !== 'on') redirect('/signup?e=agree');
 
   const ip = await clientIp();
-  if (await tooMany(`signup:${ip}`, 10, 60)) redirect('/signup?e=slow');
-  await recordAttempt(`signup:${ip}`);
+  if (await limited(`signup:${ip}`, 10, 60)) redirect('/signup?e=slow');
 
   // An address nobody has confirmed can be claimed again by its real owner. That stops anyone
   // from blocking an email they do not own. A confirmed address is never touched.
@@ -50,8 +50,7 @@ export async function signup(formData) {
   if (!rows[0]) redirect('/signup?e=taken');
 
   await startSession(rows[0].id, rows[0].password_hash);
-  await sendVerification(rows[0]);
-  redirect('/dashboard');
+  redirect((await sendVerification(rows[0])) ? '/dashboard' : '/dashboard?e=mailfail');
 }
 
 export async function resendVerification() {
@@ -61,8 +60,7 @@ export async function resendVerification() {
 
   const ip = await clientIp();
   const keys = [`resend:${couple.id}`, `resend-ip:${ip}`];
-  if ((await tooMany(keys[0], 3, 60)) || (await tooMany(keys[1], 10, 60))) redirect('/dashboard?e=slow');
-  for (const key of keys) await recordAttempt(key);
+  if ((await limited(keys[0], 3, 60)) || (await limited(keys[1], 10, 60))) redirect('/dashboard?e=slow');
 
   const sent = await sendVerification(couple);
   redirect(sent ? '/dashboard?e=sent' : '/dashboard?e=mailfail');
@@ -71,8 +69,7 @@ export async function resendVerification() {
 export async function verifyEmail(formData) {
   const token = String(formData.get('t') ?? '');
   const ip = await clientIp();
-  if (await tooMany(`verify-ip:${ip}`, 30, 15)) redirect('/verify?e=slow');
-  await recordAttempt(`verify-ip:${ip}`);
+  if (await limited(`verify-ip:${ip}`, 30, 15)) redirect('/verify?e=slow');
 
   const coupleId = await consumeToken(token, 'verify');
   if (!coupleId) redirect('/verify?e=badlink');
@@ -86,8 +83,7 @@ export async function requestReset(formData) {
 
   const ip = await clientIp();
   const keys = [`forgot:${email}`, `forgot-ip:${ip}`];
-  if ((await tooMany(keys[0], 3, 60)) || (await tooMany(keys[1], 10, 60))) redirect('/forgot?e=slow');
-  for (const key of keys) await recordAttempt(key);
+  if ((await limited(keys[0], 3, 60)) || (await limited(keys[1], 10, 60))) redirect('/forgot?e=slow');
 
   const { rows } = await query('select id, email from couples where email = $1', [email]);
   if (rows[0]) {
@@ -112,8 +108,7 @@ export async function resetPassword(formData) {
   if (password.length < 8 || password.length > 200) redirect(`/reset?t=${encodeURIComponent(token)}&e=password`);
 
   const ip = await clientIp();
-  if (await tooMany(`reset-ip:${ip}`, 20, 15)) redirect('/forgot?e=slow');
-  await recordAttempt(`reset-ip:${ip}`);
+  if (await limited(`reset-ip:${ip}`, 20, 15)) redirect('/forgot?e=slow');
 
   // The password is checked first, so a typo does not burn the link.
   const coupleId = await consumeToken(token, 'reset');
@@ -134,14 +129,12 @@ export async function login(formData) {
   const ip = await clientIp();
   const keys = [`login:${email}`, `login-ip:${ip}`];
 
-  if ((await tooMany(keys[0], 8, 15)) || (await tooMany(keys[1], 30, 15))) redirect('/login?e=slow');
+  if ((await limited(keys[0], 8, 15)) || (await limited(keys[1], 30, 15))) redirect('/login?e=slow');
 
   const { rows } = await query('select id, password_hash from couples where email = $1', [email]);
   const ok = rows[0] && verifyPassword(password, rows[0].password_hash);
-  if (!ok) {
-    for (const key of keys) await recordAttempt(key);
-    redirect('/login?e=login');
-  }
+  if (!ok) redirect('/login?e=login');
+  for (const key of keys) await refund(key);
 
   await startSession(rows[0].id, rows[0].password_hash);
   redirect('/dashboard');
@@ -290,15 +283,14 @@ export async function enterCode(formData) {
 
   const ip = await clientIp();
   const keys = [`code:${slug}:${ip}`, `code:${slug}`];
-  if ((await tooMany(keys[0], 8, 15)) || (await tooMany(keys[1], 60, 15))) redirect(`/w/${slug}?e=slow`);
+  // Each try is counted first, and given back if the code is right. So only wrong guesses use up the allowance.
+  if ((await limited(keys[0], 8, 15)) || (await limited(keys[1], 60, 15))) redirect(`/w/${slug}?e=slow`);
 
   const wedding = await weddingBySlug(slug);
   if (!wedding) redirect('/');
 
-  if (!safeEqual(code, wedding.card_code)) {
-    for (const key of keys) await recordAttempt(key);
-    redirect(`/w/${slug}?e=code`);
-  }
+  if (!safeEqual(code, wedding.card_code)) redirect(`/w/${slug}?e=code`);
+  for (const key of keys) await refund(key);
 
   await unlockWedding(slug);
   redirect(`/w/${slug}`);
@@ -334,18 +326,17 @@ export async function submitGift(formData) {
 
   const ip = await clientIp();
   const key = `gift:${slug}:${ip}`;
-  if (await tooMany(key, 10, 60)) redirect(payPage('slow'));
-  await recordAttempt(key);
+  if (await limited(key, 10, 60)) redirect(payPage('slow'));
 
   const goal = await query('select id from goals where id = $1 and wedding_id = $2', [goalId, wedding.id]);
   if (!goal.rows[0]) redirect(`/w/${slug}?e=goal`);
 
   // The same UPI reference number can never be used for two gifts.
   const { rows } = await query(
-    `insert into gifts (wedding_id, goal_id, guest_name, message, amount, utr, show_amount)
-     values ($1, $2, $3, $4, $5, $6, $7)
-     on conflict (wedding_id, utr) do nothing returning id`,
-    [wedding.id, goalId, guestName, message, amount, utr, showAmount]
+    `insert into gifts (wedding_id, goal_id, guest_name, message, amount, utr, show_amount, cert_key)
+     values ($1, $2, $3, $4, $5, $6, $7, $8)
+     on conflict (wedding_id, utr) do nothing returning id, cert_key`,
+    [wedding.id, goalId, guestName, message, amount, utr, showAmount, randomBytes(16).toString('base64url')]
   );
   if (!rows[0]) redirect(payPage('used'));
 
@@ -366,5 +357,5 @@ export async function submitGift(formData) {
     });
   });
 
-  redirect(`/gift/${rows[0].id}`);
+  redirect(`/gift/${rows[0].id}?k=${rows[0].cert_key}`);
 }

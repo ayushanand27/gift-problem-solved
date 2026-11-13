@@ -29,8 +29,8 @@ export default function Privacy() {
       </ul>
       <h3>Everyone</h3>
       <ul>
-        <li>Your IP address, kept for up to a day, only to slow down people who guess passwords or card codes.</li>
-        <li>Two kinds of cookies, both needed for the site to work: a login cookie for couples (7 days) and a cookie that remembers a guest typed the right card code (30 days). We use no advertising or tracking cookies and no analytics.</li>
+        <li>A scrambled (hashed) form of your IP address and, when you log in or reset a password, of your email, kept for up to a day, only to slow down people who guess passwords or card codes.</li>
+        <li>Two kinds of cookies, both needed for the site to work: a login cookie for couples (7 days) and a cookie that remembers a guest typed the right card code (1 day). We use no advertising or tracking cookies and no analytics.</li>
       </ul>
 
       <h2>Money</h2>

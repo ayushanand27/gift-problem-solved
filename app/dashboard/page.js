@@ -47,24 +47,31 @@ export default async function Dashboard({ searchParams }) {
     );
   }
 
-  const goals = await goalsWithTotals(wedding.id);
-  const { rows: gifts } = await query(
-    `select f.id, f.guest_name, f.message, f.amount, f.utr, f.status, g.title as goal,
-            to_char(f.created_at at time zone 'Asia/Kolkata', 'DD Mon, HH12:MI AM') as at
-       from gifts f join goals g on g.id = f.goal_id
-      where f.wedding_id = $1
-      order by f.created_at desc`,
-    [wedding.id]
-  );
   const FILTERS = [['', 'All'], ['pending', 'Waiting'], ['confirmed', 'Confirmed'], ['rejected', 'Not received']];
   const filter = FILTERS.some(([key]) => key && key === statusFilter) ? statusFilter : '';
-  const shown = filter ? gifts.filter((gift) => gift.status === filter) : gifts;
-  const visible = all ? shown : shown.slice(0, 50);
+  const goals = await goalsWithTotals(wedding.id);
+  const { rows: totals } = await query(
+    `select count(*)::int as n,
+            coalesce(sum(amount) filter (where status = 'confirmed'), 0)::int as confirmed,
+            (count(*) filter (where status = 'pending'))::int as waiting
+       from gifts where wedding_id = $1`,
+    [wedding.id]
+  );
+  const { rows: gifts } = await query(
+    `select f.id, f.cert_key, f.guest_name, f.message, f.amount, f.utr, f.status, g.title as goal,
+            to_char(f.created_at at time zone 'Asia/Kolkata', 'DD Mon, HH12:MI AM') as at
+       from gifts f join goals g on g.id = f.goal_id
+      where f.wedding_id = $1 and ($2 = '' or f.status = $2)
+      order by f.created_at desc
+      limit $3`,
+    [wedding.id, filter, all ? 5000 : 51]
+  );
+  const visible = all ? gifts : gifts.slice(0, 50);
+  const hasMore = gifts.length > 50;
 
   const pageUrl = `${await siteUrl()}/w/${wedding.slug}`;
   const qr = await qrDataUrl(pageUrl, 480);
-  const confirmed = gifts.filter((gift) => gift.status === 'confirmed').reduce((sum, gift) => sum + gift.amount, 0);
-  const waiting = gifts.filter((gift) => gift.status === 'pending');
+  const { n: giftCount, confirmed, waiting } = totals[0];
 
   return (
     <div className="wide">
@@ -80,8 +87,8 @@ export default async function Dashboard({ searchParams }) {
 
       <section className="stats">
         <div className="card stat"><span>Confirmed by you</span><strong>{inr(confirmed)}</strong></div>
-        <div className="card stat"><span>Waiting for you</span><strong>{waiting.length}</strong></div>
-        <div className="card stat"><span>Total gifts</span><strong>{gifts.length}</strong></div>
+        <div className="card stat"><span>Waiting for you</span><strong>{waiting}</strong></div>
+        <div className="card stat"><span>Total gifts</span><strong>{giftCount}</strong></div>
       </section>
 
       <section className="card kit">
@@ -120,7 +127,7 @@ export default async function Dashboard({ searchParams }) {
           Open your bank or UPI app, find the payment with the same reference number (UTR) and amount, then confirm it here.
           Only you can see names and amounts.
         </p>
-        {gifts.length > 0 && (
+        {giftCount > 0 && (
           <div className="row filters">
             {FILTERS.map(([key, label]) => (
               <Link key={label} className={`btn small${filter === key ? ' primary' : ''}`} href={key ? `/dashboard?s=${key}#gifts` : '/dashboard#gifts'}>{label}</Link>
@@ -128,7 +135,7 @@ export default async function Dashboard({ searchParams }) {
             <a className="btn small" href="/dashboard/export">Download CSV</a>
           </div>
         )}
-        {gifts.length === 0 && <p className="card empty">No gifts yet. They will show up here as guests pay.</p>}
+        {giftCount === 0 && <p className="card empty">No gifts yet. They will show up here as guests pay.</p>}
         <div className="gift-list">
           {visible.map((gift) => (
             <div className="card gift" key={gift.id}>
@@ -142,13 +149,13 @@ export default async function Dashboard({ searchParams }) {
                 <input type="hidden" name="gift_id" value={gift.id} />
                 {gift.status !== 'confirmed' && <button className="btn small primary" name="status" value="confirmed">Received</button>}
                 {gift.status !== 'rejected' && <button className="btn small" name="status" value="rejected">Not received</button>}
-                <Link className="btn small" href={`/gift/${gift.id}`}>Certificate</Link>
+                <Link className="btn small" href={`/gift/${gift.id}?k=${gift.cert_key}`}>Certificate</Link>
               </form>
             </div>
           ))}
         </div>
-        {visible.length < shown.length && (
-          <p><Link className="btn small" href={`/dashboard?${filter ? `s=${filter}&` : ''}all=1#gifts`}>Show all {shown.length}</Link></p>
+        {hasMore && !all && (
+          <p><Link className="btn small" href={`/dashboard?${filter ? `s=${filter}&` : ''}all=1#gifts`}>Show all</Link></p>
         )}
       </section>
     </div>

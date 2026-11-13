@@ -1,24 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { hashPassword, safeEqual, verifyPassword } from '../lib/password.js';
 
-// The real helpers live in lib/auth.js, which needs Next.js to load. This repeats the same scheme
-// so the password format (salt:hash, scrypt) stays stable and nobody changes it by accident.
-const verify = (password, stored) => {
-  const [saltHex, hashHex] = stored.split(':');
-  const expected = Buffer.from(hashHex, 'hex');
-  return timingSafeEqual(scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length), expected);
-};
-
-test('stored hash format is salt:hash and never contains the password', () => {
-  const salt = randomBytes(16);
-  const stored = `${salt.toString('hex')}:${scryptSync('hunter2hunter2', salt, 64).toString('hex')}`;
-  assert.ok(!stored.includes('hunter2'));
-  assert.ok(verify('hunter2hunter2', stored));
-  assert.ok(!verify('hunter2hunter3', stored));
+test('hash is salted, never contains the password, and verifies', () => {
+  const a = hashPassword('hunter2hunter2');
+  const b = hashPassword('hunter2hunter2');
+  assert.notEqual(a, b);
+  assert.ok(!a.includes('hunter2'));
+  assert.ok(verifyPassword('hunter2hunter2', a));
+  assert.ok(!verifyPassword('hunter2hunter3', a));
+  assert.ok(!verifyPassword('anything', 'garbage'));
+  assert.ok(!verifyPassword('anything', ''));
 });
 
-test('session fingerprint changes when the password hash changes', () => {
-  const fp = (h) => createHash('sha256').update(h).digest('hex').slice(0, 16);
-  assert.notEqual(fp('old'), fp('new'));
+test('safeEqual handles different lengths without throwing', () => {
+  assert.ok(safeEqual('123456', '123456'));
+  assert.ok(!safeEqual('123456', '12345'));
+  assert.ok(!safeEqual('123456', '654321'));
 });
