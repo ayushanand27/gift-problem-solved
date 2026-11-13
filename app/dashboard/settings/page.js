@@ -18,7 +18,7 @@ export default async function Settings({ searchParams }) {
   return (
     <div className="medium">
       <p><Link href="/dashboard">← Back to dashboard</Link></p>
-      <h1>Edit your gift page</h1>
+      <h1>Edit your <em>gift page</em></h1>
       <p className="hint">A goal that already has gifts cannot be removed, only renamed.</p>
       <Notice code={e} />
       <div className="card"><WeddingForm wedding={wedding} goals={goals} /></div>

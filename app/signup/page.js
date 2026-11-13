@@ -10,8 +10,9 @@ export default async function Signup({ searchParams }) {
   if (await isLoggedIn()) redirect('/dashboard');
   const { e } = await searchParams;
   return (
-    <div className="narrow card">
-      <h1>Create your account</h1>
+    <div className="narrow">
+      <p className="eyebrow">Begin</p>
+      <h1>Create your <em>account</em></h1>
       <Notice code={e} />
       <form action={signup} className="stack">
         <label className="field">

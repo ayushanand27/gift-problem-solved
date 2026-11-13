@@ -27,8 +27,9 @@ export default async function Certificate({ params }) {
 
   if (gift.status === 'rejected') {
     return (
-      <div className="narrow card center">
-        <h1>Payment not found</h1>
+      <div className="narrow center">
+        <p className="eyebrow">Certificate</p>
+        <h1>Payment <em>not found</em></h1>
         <p>
           {gift.partner_one} &amp; {gift.partner_two} could not find this payment in their account.
           Please check the UPI reference number with them.
@@ -60,7 +61,7 @@ export default async function Certificate({ params }) {
           <h2 className="cert-goal">{gift.goal}</h2>
           {gift.show_amount && <p className="cert-amount">{inr(gift.amount)}</p>}
           <p className="cert-small">for the wedding of</p>
-          <p className="cert-couple">{gift.partner_one} &amp; {gift.partner_two}</p>
+          <p className="cert-couple">{gift.partner_one} <em>&amp;</em> {gift.partner_two}</p>
           {gift.wedding_date && <p className="cert-date">{niceDate(gift.wedding_date)}</p>}
           {gift.message && <p className="cert-message">“{gift.message}”</p>}
 

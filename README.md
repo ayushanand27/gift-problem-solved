@@ -26,6 +26,9 @@ A plain UPI payment does not tell any website that it happened. So the guest typ
 ## Tech
 
 - Next.js (App Router) and React
+- `motion` for slow scroll reveals and parallax, `lenis` for smooth scrolling, `lucide-react` for icons
+- Cormorant Garamond and Plus Jakarta Sans, self-hosted through `@fontsource`
+- Photographs from Unsplash (list in `lib/images.js`)
 - PostgreSQL through the `pg` driver
 - `qrcode` for QR images
 - No payment gateway and no third-party scripts

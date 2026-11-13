@@ -10,8 +10,9 @@ export default async function Login({ searchParams }) {
   if (await isLoggedIn()) redirect('/dashboard');
   const { e } = await searchParams;
   return (
-    <div className="narrow card">
-      <h1>Log in</h1>
+    <div className="narrow">
+      <p className="eyebrow">Welcome back</p>
+      <h1>Log <em>in</em></h1>
       <Notice code={e} />
       <form action={login} className="stack">
         <label className="field">

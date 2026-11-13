@@ -17,9 +17,9 @@ export default async function GuestPage({ params, searchParams }) {
 
   if (!(await hasUnlocked(slug))) {
     return (
-      <div className="narrow card center">
+      <div className="narrow center">
         <p className="eyebrow">You are invited</p>
-        <h1>Enter the code on the card</h1>
+        <h1>Enter the code on <em>the card</em></h1>
         <p className="hint">It is the 6-digit number printed next to the QR on the wedding card.</p>
         <Notice code={e} />
         <form action={enterCode} className="stack">
@@ -37,7 +37,7 @@ export default async function GuestPage({ params, searchParams }) {
     <div className="medium">
       <header className="couple center">
         <p className="eyebrow">The wedding of</p>
-        <h1>{wedding.partner_one} &amp; {wedding.partner_two}</h1>
+        <h1>{wedding.partner_one} <em>&amp;</em> {wedding.partner_two}</h1>
         {wedding.wedding_date && <p className="hint">{niceDate(wedding.wedding_date)}</p>}
         <p className="lead">Instead of a boxed gift, help us with something we are really saving for.</p>
       </header>

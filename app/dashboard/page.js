@@ -23,7 +23,8 @@ export default async function Dashboard({ searchParams }) {
   if (!wedding) {
     return (
       <div className="medium">
-        <h1>Set up your gift page</h1>
+        <p className="eyebrow">Step one</p>
+        <h1>Set up your <em>gift page</em></h1>
         <p className="lead">This takes about two minutes. You can change everything later.</p>
         <Notice code={e} />
         <div className="card"><WeddingForm /></div>
@@ -50,7 +51,8 @@ export default async function Dashboard({ searchParams }) {
     <div className="wide">
       <div className="title-row">
         <div>
-          <h1>{wedding.partner_one} &amp; {wedding.partner_two}</h1>
+          <p className="eyebrow">Your dashboard</p>
+          <h1>{wedding.partner_one} <em>&amp;</em> {wedding.partner_two}</h1>
           {wedding.wedding_date && <p className="hint">{niceDate(wedding.wedding_date)}</p>}
         </div>
         <Link href="/dashboard/settings" className="btn">Edit page</Link>
@@ -66,7 +68,8 @@ export default async function Dashboard({ searchParams }) {
       <section className="card kit">
         <img src={qr} alt="QR code that opens your gift page" width={180} height={180} />
         <div>
-          <h2>For your wedding card</h2>
+          <p className="eyebrow">For the printer</p>
+          <h2>For your <em>wedding card</em></h2>
           <p>Print this QR and this code on the card. Guests scan the QR, then type the code.</p>
           <p className="code">{wedding.card_code}</p>
           <p className="link-text">{pageUrl}</p>
