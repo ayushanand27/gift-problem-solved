@@ -239,6 +239,17 @@ export async function saveWedding(formData) {
     }
   });
 
+  // Tell the couple whenever the payment destination changes, so a hijacked session cannot do it silently.
+  if (existing && (existing.upi_id !== upiId || existing.payee_name !== payeeName)) {
+    after(async () =>
+      sendMail({
+        to: couple.email,
+        subject: 'Your ShagunGoals payment details were changed',
+        text: `The UPI ID on your wedding page was changed from ${existing.upi_id} to ${upiId} (payee name: ${payeeName}).\n\nIf this was you, nothing more to do. If it was not you, reset your password right away at ${await siteUrl()}/forgot and check your page.`,
+      }).catch(() => {})
+    );
+  }
+
   redirect(existing ? '/dashboard?e=saved' : '/dashboard');
 }
 
