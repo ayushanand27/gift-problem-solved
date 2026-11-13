@@ -159,7 +159,7 @@ export default async function Home() {
               </label>
               <Consent />
               <button className="btn primary">Begin your page <ArrowRight size={14} strokeWidth={1.25} /></button>
-              <p className="hint">Already with us? <Link href="/login">Log in</Link></p>
+              <p className="hint">Already with us? <Link href="/login">Log in</Link> · Just curious? <Link href="/demo">See a demo</Link></p>
             </form>
           )}
         </Reveal>
