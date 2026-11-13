@@ -50,7 +50,11 @@ export async function signup(formData) {
   if (!rows[0]) redirect('/signup?e=taken');
 
   await startSession(rows[0].id, rows[0].password_hash);
-  redirect((await sendVerification(rows[0])) ? '/dashboard' : '/dashboard?e=mailfail');
+  // The email is sent after the page has already moved on, so signup does not wait for the mail server.
+  // If it fails, the dashboard still has a "Send the link again" button.
+  const created = rows[0];
+  after(() => sendVerification(created));
+  redirect('/dashboard');
 }
 
 export async function resendVerification() {
